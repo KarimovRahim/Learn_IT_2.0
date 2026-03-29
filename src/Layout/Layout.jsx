@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import Switch from '../Components/swintcher.jsx'
 import Footer from '../Components/Footer/Footer.jsx'
 import BurgerMenu from '../Components/BurgerMenu.jsx'
+import InstallPWAButton from '../Components/InstallPWAButton.jsx'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import log from '../assets/logotype.png';
@@ -112,9 +113,6 @@ const Layout = () => {
                 className="w-[100px]"
               />
             </div>
-            {/* <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-              Learn IT
-            </span> */}
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -136,7 +134,8 @@ const Layout = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-6" data-aos="fade-left" data-aos-duration="700" data-aos-delay="600">
+          <div className="flex items-center gap-4" data-aos="fade-left" data-aos-duration="700" data-aos-delay="600">
+            <InstallPWAButton />
             <Switch darkChecked={isDark} darkOnchange={handleToggle} />
             <div className="hidden md:flex items-center gap-6">
               <a
@@ -154,17 +153,6 @@ const Layout = () => {
                 smooth
                 to="/#contacts"
               >
-                {/* <Button
-                  variant="primary"
-                  size="sm"
-                  className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-500 dark:hover:bg-red-600"
-                  data-aos="zoom-in"
-                  data-aos-duration="500"
-                  data-aos-delay="800"
-                  data-aos-easing="ease-out-back"
-                >
-                  Войти
-                </Button> */}
               </HashLink>
             </div>
 
