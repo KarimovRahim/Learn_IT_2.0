@@ -38,16 +38,16 @@ const InstallPWAButton = () => {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
-    
+
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('Пользователь установил приложение');
       setShowButton(false);
     } else {
       console.log('Пользователь отказался от установки');
     }
-    
+
     setDeferredPrompt(null);
   };
 
@@ -74,27 +74,10 @@ const InstallPWAButton = () => {
         >
           <Download className="w-3.5 h-3.5" />
         </motion.div>
-        
+
         <span className="hidden sm:inline">Установить</span>
-        
-        
-        {/* Пульсирующая точка для привлечения внимания */}
-        <motion.div
-          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
+
       </motion.button>
-        {/* Кнопка закрытия */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsVisible(false);
-          }}
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
-        >
-          <X className="w-2.5 h-2.5" />
-        </button>
     </AnimatePresence>
   );
 };
