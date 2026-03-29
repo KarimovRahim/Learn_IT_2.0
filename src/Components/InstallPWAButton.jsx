@@ -77,6 +77,14 @@ const InstallPWAButton = () => {
         
         <span className="hidden sm:inline">Установить</span>
         
+        
+        {/* Пульсирующая точка для привлечения внимания */}
+        <motion.div
+          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        />
+      </motion.button>
         {/* Кнопка закрытия */}
         <button
           onClick={(e) => {
@@ -87,14 +95,6 @@ const InstallPWAButton = () => {
         >
           <X className="w-2.5 h-2.5" />
         </button>
-        
-        {/* Пульсирующая точка для привлечения внимания */}
-        <motion.div
-          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-      </motion.button>
     </AnimatePresence>
   );
 };
