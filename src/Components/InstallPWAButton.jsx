@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Share2, X, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const InstallPWAButton = () => {
   const [showButton, setShowButton] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches;
     setIsInstalled(isAppInstalled);
     
     if (isAppInstalled) {
       setShowButton(false);
     }
+    
+    return () => setMounted(false);
   }, []);
 
   const handleClick = () => {
@@ -31,48 +36,44 @@ const InstallPWAButton = () => {
     setIsVisible(false);
   };
 
+  // Не показываем кнопку пока не смонтировано
+  if (!mounted) return null;
   if (isInstalled || !showButton || !isVisible) return null;
 
   return (
     <>
       {/* Кнопка установки */}
-      <AnimatePresence>
-        <motion.button
-          initial={{ opacity: 0, scale: 0.9, y: -10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: -10 }}
-          transition={{ duration: 0.3 }}
-          onClick={handleClick}
-          className="relative group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+      <button
+        onClick={handleClick}
+        className="relative group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+      >
+        <motion.div
+          animate={{ y: [0, -2, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <motion.div
-            animate={{ y: [0, -2, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Share2 className="w-3.5 h-3.5" />
-          </motion.div>
-          <span className="hidden sm:inline">Установить</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              hideButton();
-            }}
-            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
-          >
-            <X className="w-2.5 h-2.5" />
-          </button>
-          <motion.div
-            className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
-            animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
-        </motion.button>
-      </AnimatePresence>
+          <Share2 className="w-3.5 h-3.5" />
+        </motion.div>
+        <span className="hidden sm:inline">Установить</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            hideButton();
+          }}
+          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+        >
+          <X className="w-2.5 h-2.5" />
+        </button>
+        <motion.div
+          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        />
+      </button>
 
-      {/* Модальное окно */}
-      {showInstructions && (
+      {/* Модальное окно через Portal */}
+      {showInstructions && createPortal(
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           style={{ 
             position: 'fixed',
             top: 0,
@@ -182,14 +183,14 @@ const InstallPWAButton = () => {
             {/* Текст-примечание */}
             <div className="pb-4 text-center">
               <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                Приложение появится на рабочем столе!
+                Приложение появится на рабочем столе
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Добавляем анимацию через style */}
       <style>{`
         @keyframes modalFadeIn {
           from {
