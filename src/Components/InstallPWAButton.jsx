@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Share2, X } from 'lucide-react';
+import { Share2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const InstallPWAButton = () => {
@@ -9,11 +9,9 @@ const InstallPWAButton = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Проверяем, установлено ли уже приложение
     const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches;
     setIsInstalled(isAppInstalled);
     
-    // Если приложение уже установлено, не показываем кнопку
     if (isAppInstalled) {
       setShowButton(false);
     }
@@ -31,7 +29,6 @@ const InstallPWAButton = () => {
     setIsVisible(false);
   };
 
-  // Не показываем кнопку если приложение уже установлено или пользователь закрыл
   if (isInstalled || !showButton || !isVisible) return null;
 
   return (
@@ -52,9 +49,7 @@ const InstallPWAButton = () => {
           >
             <Share2 className="w-3.5 h-3.5" />
           </motion.div>
-
           <span className="hidden sm:inline">Установить</span>
-
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -64,7 +59,6 @@ const InstallPWAButton = () => {
           >
             <X className="w-2.5 h-2.5" />
           </button>
-
           <motion.div
             className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
             animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
@@ -73,103 +67,110 @@ const InstallPWAButton = () => {
         </motion.button>
       </AnimatePresence>
 
-      {/* Модальное окно с инструкцией */}
+      {/* iOS стиль модального окна */}
       <AnimatePresence>
         {showInstructions && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm"
             onClick={closeInstructions}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-sm w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden"
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-[340px] sm:max-w-sm bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-2xl overflow-hidden shadow-xl mx-4 sm:mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="h-1 bg-gradient-to-r from-red-500 to-red-600" />
-              
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Установить приложение
-                  </h3>
-                  <button
-                    onClick={closeInstructions}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
+              {/* iOS стиль handle bar */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full" />
+              </div>
+
+              {/* Иконка приложения */}
+              <div className="flex justify-center pt-4 sm:pt-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg flex items-center justify-center">
+                  <Share2 className="w-8 h-8 text-white" />
                 </div>
-                
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                  Чтобы установить приложение, выполните 2 простых шага:
+              </div>
+
+              {/* Заголовок */}
+              <div className="text-center px-5 pt-4 pb-2">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Установить приложение
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Добавьте Learn IT на главный экран
                 </p>
-                
-                <div className="space-y-6 mb-6">
-                  {/* Шаг 1 */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-sm font-bold shrink-0">
-                      1
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                        Нажмите кнопку «Поделиться»
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl px-4 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <Share2 className="w-5 h-5 text-blue-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Поделиться</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                            </svg>
-                          </div>
-                          <span className="text-[10px] text-gray-400 mt-1">внизу экрана</span>
-                        </div>
+              </div>
+
+              {/* Инструкция */}
+              <div className="px-5 py-4 space-y-4">
+                {/* Шаг 1 */}
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      Нажмите кнопку «Поделиться»
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                        <Share2 className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs text-gray-600 dark:text-gray-300">Поделиться</span>
                       </div>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
-                  
-                  {/* Шаг 2 */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-sm font-bold shrink-0">
-                      2
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                        Прокрутите вниз и нажмите
-                      </p>
-                      <div className="inline-block bg-gray-100 dark:bg-zinc-800 rounded-xl px-5 py-2.5">
+                </div>
+
+                {/* Шаг 2 */}
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      Прокрутите вниз и нажмите
+                    </p>
+                    <div className="mt-2">
+                      <div className="inline-block bg-gray-100 dark:bg-zinc-800 rounded-xl px-4 py-1.5">
                         <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                           «На экран домой»
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                        <span>прокрутите вниз</span>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+
+                {/* Анимация скролла */}
+                <div className="flex justify-center py-1">
+                  <div className="flex flex-col items-center">
+                    <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center animate-bounce">
+                      <ChevronDown className="w-3 h-3 text-gray-500" />
+                    </div>
+                    <span className="text-[10px] text-gray-400 mt-1">прокрутите вниз</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Кнопка действия */}
+              <div className="px-5 pb-5 pt-2">
                 <button
                   onClick={closeInstructions}
-                  className="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-300"
+                  className="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium text-base active:scale-95 transition-all duration-200 shadow-md"
                 >
-                  Понятно, установлю
+                  Понятно
                 </button>
-                
-                <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-3">
+              </div>
+
+              {/* Текст-примечание */}
+              <div className="pb-5 text-center">
+                <p className="text-[11px] text-gray-400 dark:text-gray-500">
                   Приложение появится на рабочем столе
                 </p>
               </div>
@@ -177,6 +178,26 @@ const InstallPWAButton = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Стили для анимации */}
+      <style>{`
+        @media (max-width: 640px) {
+          .modal-enter {
+            transform: translateY(100%);
+          }
+          .modal-enter-active {
+            transform: translateY(0);
+            transition: transform 300ms ease-out;
+          }
+          .modal-exit {
+            transform: translateY(0);
+          }
+          .modal-exit-active {
+            transform: translateY(100%);
+            transition: transform 300ms ease-in;
+          }
+        }
+      `}</style>
     </>
   );
 };
