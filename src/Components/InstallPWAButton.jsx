@@ -19,10 +19,14 @@ const InstallPWAButton = () => {
 
   const handleClick = () => {
     setShowInstructions(true);
+    // Блокируем прокрутку body
+    document.body.style.overflow = 'hidden';
   };
 
   const closeInstructions = () => {
     setShowInstructions(false);
+    // Разблокируем прокрутку body
+    document.body.style.overflow = '';
   };
 
   const hideButton = () => {
@@ -67,79 +71,99 @@ const InstallPWAButton = () => {
         </motion.button>
       </AnimatePresence>
 
-      {/* iOS стиль модального окна */}
+      {/* Модальное окно - фиксированное позиционирование */}
       <AnimatePresence>
         {showInstructions && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={closeInstructions}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
           >
             <motion.div
-              initial={{ y: '100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-[340px] sm:max-w-sm bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-2xl overflow-hidden shadow-xl mx-4 sm:mx-auto"
+              className="relative w-full max-w-[340px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl mx-4"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* iOS стиль handle bar */}
-              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+              {/* Закрытие по свайпу вниз (для мобильных) */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-8 z-10"
+                onTouchStart={(e) => {
+                  const startY = e.touches[0].clientY;
+                  const onTouchMove = (moveEvent) => {
+                    const currentY = moveEvent.touches[0].clientY;
+                    if (currentY - startY > 50) {
+                      closeInstructions();
+                      window.removeEventListener('touchmove', onTouchMove);
+                    }
+                  };
+                  window.addEventListener('touchmove', onTouchMove);
+                  window.addEventListener('touchend', () => {
+                    window.removeEventListener('touchmove', onTouchMove);
+                  }, { once: true });
+                }}
+              />
+
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full" />
               </div>
 
               {/* Иконка приложения */}
-              <div className="flex justify-center pt-4 sm:pt-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg flex items-center justify-center">
-                  <Share2 className="w-8 h-8 text-white" />
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg flex items-center justify-center">
+                  <Share2 className="w-7 h-7 text-white" />
                 </div>
               </div>
 
               {/* Заголовок */}
-              <div className="text-center px-5 pt-4 pb-2">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <div className="text-center px-5 pt-2 pb-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Установить приложение
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Добавьте Learn IT на главный экран
                 </p>
               </div>
 
               {/* Инструкция */}
-              <div className="px-5 py-4 space-y-4">
+              <div className="px-5 py-3 space-y-3">
                 {/* Шаг 1 */}
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
                     1
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200">
                       Нажмите кнопку «Поделиться»
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
-                        <Share2 className="w-4 h-4 text-blue-500" />
-                        <span className="text-xs text-gray-600 dark:text-gray-300">Поделиться</span>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
+                        <Share2 className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="text-[11px] text-gray-600 dark:text-gray-300">Поделиться</span>
                       </div>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                     </div>
                   </div>
                 </div>
 
                 {/* Шаг 2 */}
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
                     2
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200">
                       Прокрутите вниз и нажмите
                     </p>
-                    <div className="mt-2">
-                      <div className="inline-block bg-gray-100 dark:bg-zinc-800 rounded-xl px-4 py-1.5">
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    <div className="mt-1.5">
+                      <div className="inline-block bg-gray-100 dark:bg-zinc-800 rounded-lg px-3 py-1">
+                        <span className="text-[12px] font-medium text-blue-600 dark:text-blue-400">
                           «На экран домой»
                         </span>
                       </div>
@@ -148,29 +172,33 @@ const InstallPWAButton = () => {
                 </div>
 
                 {/* Анимация скролла */}
-                <div className="flex justify-center py-1">
+                <div className="flex justify-center py-0.5">
                   <div className="flex flex-col items-center">
-                    <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center animate-bounce">
+                    <motion.div
+                      animate={{ y: [0, 3, 0] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-5 h-5 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center"
+                    >
                       <ChevronDown className="w-3 h-3 text-gray-500" />
-                    </div>
-                    <span className="text-[10px] text-gray-400 mt-1">прокрутите вниз</span>
+                    </motion.div>
+                    <span className="text-[9px] text-gray-400 mt-0.5">прокрутите вниз</span>
                   </div>
                 </div>
               </div>
 
               {/* Кнопка действия */}
-              <div className="px-5 pb-5 pt-2">
+              <div className="px-5 pb-4 pt-1">
                 <button
                   onClick={closeInstructions}
-                  className="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium text-base active:scale-95 transition-all duration-200 shadow-md"
+                  className="w-full py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium text-sm active:scale-95 transition-all duration-200 shadow-md"
                 >
                   Понятно
                 </button>
               </div>
 
               {/* Текст-примечание */}
-              <div className="pb-5 text-center">
-                <p className="text-[11px] text-gray-400 dark:text-gray-500">
+              <div className="pb-4 text-center">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">
                   Приложение появится на рабочем столе
                 </p>
               </div>
@@ -178,26 +206,6 @@ const InstallPWAButton = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Стили для анимации */}
-      <style>{`
-        @media (max-width: 640px) {
-          .modal-enter {
-            transform: translateY(100%);
-          }
-          .modal-enter-active {
-            transform: translateY(0);
-            transition: transform 300ms ease-out;
-          }
-          .modal-exit {
-            transform: translateY(0);
-          }
-          .modal-exit-active {
-            transform: translateY(100%);
-            transition: transform 300ms ease-in;
-          }
-        }
-      `}</style>
     </>
   );
 };
