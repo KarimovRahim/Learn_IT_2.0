@@ -109,6 +109,10 @@ void main() {
 }
 `;
 
+// Глобальный счётчик активных WebGL контекстов
+let activeWebGLContexts = 0;
+const MAX_WEBGL_CONTEXTS = 6;
+
 const Aurora = ({
   colorStops = ['#ffb3b3', '#ff8080', '#ff4d4d'],
   amplitude = 1.0,
@@ -122,16 +126,16 @@ const Aurora = ({
   const canvasRef = useRef(null);
   const [isSupported, setIsSupported] = useState(true);
   const propsRef = useRef({ colorStops, amplitude, blend, speed, time });
-  
-  // 🔥 ФИКС: Сохраняем начальное время в sessionStorage
+  const contextCreatedRef = useRef(false);
+  const [key, setKey] = useState(0); // Добавляем key для принудительного пересоздания
+
+  // Сохраняем начальное время в sessionStorage
   const [initialTime] = useState(() => {
-    // Пытаемся получить сохранённое время из sessionStorage
     const savedTime = sessionStorage.getItem('aurora-start-time');
     if (savedTime) {
       return parseFloat(savedTime);
     }
-    // Если нет сохранённого времени, создаём новое и сохраняем
-    const newTime = Date.now() / 1000; // в секундах
+    const newTime = Date.now() / 1000;
     sessionStorage.setItem('aurora-start-time', newTime.toString());
     return newTime;
   });
@@ -140,9 +144,31 @@ const Aurora = ({
     propsRef.current = { colorStops, amplitude, blend, speed, time };
   }, [colorStops, amplitude, blend, speed, time]);
 
+  // Слушаем события visibilitychange для восстановления контекста
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // При возвращении на вкладку, принудительно обновляем
+        setKey(prev => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   useEffect(() => {
     const ctn = ctnDom.current;
     if (!ctn) return;
+
+    // Проверка лимита WebGL контекстов
+    if (activeWebGLContexts >= MAX_WEBGL_CONTEXTS) {
+      console.warn(`Aurora: Maximum WebGL contexts (${MAX_WEBGL_CONTEXTS}) reached, using fallback`);
+      setIsSupported(false);
+      return;
+    }
 
     // Проверка поддержки WebGL
     const checkWebGLSupport = () => {
@@ -165,8 +191,13 @@ const Aurora = ({
     }
 
     let renderer, gl, program, mesh, animateId;
+    let isMounted = true;
 
     try {
+      // Увеличиваем счётчик активных контекстов
+      activeWebGLContexts++;
+      contextCreatedRef.current = true;
+
       renderer = new Renderer({
         alpha: true,
         premultipliedAlpha: true,
@@ -177,10 +208,14 @@ const Aurora = ({
       gl = renderer.gl;
       if (!gl) {
         setIsSupported(false);
+        activeWebGLContexts--;
+        contextCreatedRef.current = false;
         return;
       }
 
+      // Принудительно очищаем буфер
       gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.canvas.style.backgroundColor = 'transparent';
@@ -192,12 +227,16 @@ const Aurora = ({
       gl.canvas.style.pointerEvents = 'none';
 
       function resize() {
-        if (!ctn || !renderer || !program) return;
+        if (!isMounted || !ctn || !renderer || !program) return;
         const width = ctn.offsetWidth;
         const height = ctn.offsetHeight;
         if (width === 0 || height === 0) return;
         renderer.setSize(width, height);
         program.uniforms.uResolution.value = [width, height];
+        // Принудительная перерисовка после ресайза
+        if (gl) {
+          gl.viewport(0, 0, width, height);
+        }
       }
 
       window.addEventListener('resize', resize);
@@ -237,18 +276,15 @@ const Aurora = ({
       ctn.appendChild(gl.canvas);
       canvasRef.current = gl.canvas;
 
-      // 🔥 ФИКС: Используем сохранённое начальное время
       const update = () => {
-        if (!program || !renderer || !mesh) return;
+        if (!isMounted || !program || !renderer || !mesh) return;
         animateId = requestAnimationFrame(update);
 
         const currentProps = propsRef.current;
-        
-        // 🔥 Вычисляем время относительно сохранённого initialTime
+
         const currentTime = Date.now() / 1000;
         const elapsed = currentTime - initialTime;
-        
-        // Устанавливаем uTime на основе elapsed времени
+
         program.uniforms.uTime.value = (currentProps.time + elapsed) * currentProps.speed * 0.2;
         program.uniforms.uAmplitude.value = currentProps.amplitude;
         program.uniforms.uBlend.value = currentProps.blend;
@@ -262,7 +298,7 @@ const Aurora = ({
         try {
           renderer.render({ scene: mesh });
         } catch (e) {
-          console.error('Render error:', e);
+          // Игнорируем ошибки рендеринга
         }
       };
 
@@ -270,23 +306,45 @@ const Aurora = ({
       setTimeout(resize, 100);
 
       return () => {
-        cancelAnimationFrame(animateId);
+        isMounted = false;
+
+        if (animateId) {
+          cancelAnimationFrame(animateId);
+        }
+
         window.removeEventListener('resize', resize);
+
         try {
-          if (ctn && gl?.canvas?.parentNode === ctn) {
+          if (ctn && gl?.canvas && gl.canvas.parentNode === ctn) {
             ctn.removeChild(gl.canvas);
           }
           if (gl) {
-            gl.getExtension('WEBGL_lose_context')?.loseContext();
+            const loseContext = gl.getExtension('WEBGL_lose_context');
+            if (loseContext) {
+              loseContext.loseContext();
+            }
           }
-        } catch (e) { }
+        } catch (e) {
+          // Игнорируем ошибки при очистке
+        }
+
+        // Уменьшаем счётчик активных контекстов при размонтировании
+        if (contextCreatedRef.current) {
+          activeWebGLContexts--;
+          contextCreatedRef.current = false;
+        }
       };
     } catch (error) {
-      console.error('WebGL initialization error:', error);
+      console.error('Aurora WebGL initialization error:', error);
       setIsSupported(false);
+
+      if (contextCreatedRef.current) {
+        activeWebGLContexts--;
+        contextCreatedRef.current = false;
+      }
       return;
     }
-  }, [initialTime]); // Добавляем initialTime в зависимости
+  }, [initialTime, key]); // Добавляем key в зависимости
 
   if (!isSupported) {
     const gradientColors = colorStops.join(', ');

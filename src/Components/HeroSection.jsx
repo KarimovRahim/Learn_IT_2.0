@@ -22,6 +22,7 @@ const HeroSection = () => {
       {/* Фон с Aurora эффектом */}
       <div className="absolute inset-0 z-1 pointer-events-none">
         <Aurora
+          key="aurora-light"
           colorStops={['#ffb3b3', '#ff9999', '#ff8080']}
           amplitude={1.3}
           blend={0.4}
@@ -29,6 +30,7 @@ const HeroSection = () => {
           className="opacity-60 md:opacity-80 dark:opacity-0 transition-all duration-700"
         />
         <Aurora
+          key="aurora-dark"
           colorStops={['#8B0000', '#B22222', '#DC143C', '#FF4444']}
           amplitude={1.5}
           blend={0.35}
@@ -36,6 +38,7 @@ const HeroSection = () => {
           className="opacity-0 dark:opacity-60 md:dark:opacity-80 transition-all duration-700"
         />
         <Aurora
+          key="aurora-glow"
           colorStops={['#FF0000', '#CC0000', '#990000']}
           amplitude={1.0}
           blend={0.5}
