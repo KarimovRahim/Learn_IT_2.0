@@ -1,69 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Share2 } from 'lucide-react';
+import { Share2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const InstallPWAButton = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showButton, setShowButton] = useState(false);
+  const [showButton, setShowButton] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [testMode, setTestMode] = useState(false); // Для тестирования на Android
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Проверяем, iPhone ли это
-    const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    setIsIOS(isIphone);
-
     // Проверяем, установлено ли уже приложение
     const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches;
     setIsInstalled(isAppInstalled);
-
-    // Для тестирования на Android: можно включить режим iPhone
-    // Раскомментируйте строку ниже, чтобы увидеть инструкцию на Android
-    // setTestMode(true);
-
-    if (!isIphone && !testMode) {
-      // Для Android: слушаем событие beforeinstallprompt
-      const handleBeforeInstallPrompt = (e) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-        setShowButton(true);
-      };
-
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-      window.addEventListener('appinstalled', () => {
-        setDeferredPrompt(null);
-        setShowButton(false);
-        setIsInstalled(true);
-      });
-
-      return () => {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
-    } else {
-      // Для iPhone или тестового режима: показываем кнопку с инструкцией
-      if (!isAppInstalled) {
-        setShowButton(true);
-      }
+    
+    // Если приложение уже установлено, не показываем кнопку
+    if (isAppInstalled) {
+      setShowButton(false);
     }
-  }, [testMode]);
+  }, []);
 
-  const handleInstall = async () => {
-    if (!isIOS && !testMode && deferredPrompt) {
-      // Android: стандартная установка
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowButton(false);
-      }
-      setDeferredPrompt(null);
-    } else {
-      // iPhone или тестовый режим: показываем инструкцию
-      setShowInstructions(true);
-    }
+  const handleClick = () => {
+    setShowInstructions(true);
   };
 
   const closeInstructions = () => {
@@ -86,23 +43,17 @@ const InstallPWAButton = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -10 }}
           transition={{ duration: 0.3 }}
-          onClick={handleInstall}
+          onClick={handleClick}
           className="relative group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
         >
           <motion.div
             animate={{ y: [0, -2, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >
-            {(isIOS || testMode) ? (
-              <Share2 className="w-3.5 h-3.5" />
-            ) : (
-              <Download className="w-3.5 h-3.5" />
-            )}
+            <Share2 className="w-3.5 h-3.5" />
           </motion.div>
 
-          <span className="hidden sm:inline">
-            {(isIOS || testMode) ? 'Установить' : 'Установить'}
-          </span>
+          <span className="hidden sm:inline">Установить</span>
 
           <button
             onClick={(e) => {
@@ -122,7 +73,7 @@ const InstallPWAButton = () => {
         </motion.button>
       </AnimatePresence>
 
-      {/* Модальное окно с инструкцией для iPhone */}
+      {/* Модальное окно с инструкцией */}
       <AnimatePresence>
         {showInstructions && (
           <motion.div
@@ -155,7 +106,7 @@ const InstallPWAButton = () => {
                 </div>
                 
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                  Чтобы установить приложение на iPhone, выполните 2 простых шага:
+                  Чтобы установить приложение, выполните 2 простых шага:
                 </p>
                 
                 <div className="space-y-6 mb-6">
@@ -202,7 +153,9 @@ const InstallPWAButton = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                        <span>↓</span>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
                         <span>прокрутите вниз</span>
                       </div>
                     </div>
