@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
 
 const VERT = `#version 300 es
@@ -111,7 +111,7 @@ void main() {
 
 // Глобальный счётчик активных WebGL контекстов
 let activeWebGLContexts = 0;
-const MAX_WEBGL_CONTEXTS = 6;
+const MAX_WEBGL_CONTEXTS = 12;
 
 const Aurora = ({
   colorStops = ['#ffb3b3', '#ff8080', '#ff4d4d'],
@@ -125,9 +125,15 @@ const Aurora = ({
   const ctnDom = useRef(null);
   const canvasRef = useRef(null);
   const [isSupported, setIsSupported] = useState(true);
+  const [isActive, setIsActive] = useState(true);
   const propsRef = useRef({ colorStops, amplitude, blend, speed, time });
   const contextCreatedRef = useRef(false);
-  const [key, setKey] = useState(0); // Добавляем key для принудительного пересоздания
+  const animationRef = useRef(null);
+  const rendererRef = useRef(null);
+  const programRef = useRef(null);
+  const meshRef = useRef(null);
+  const glRef = useRef(null);
+  const mountedRef = useRef(true);
 
   // Сохраняем начальное время в sessionStorage
   const [initialTime] = useState(() => {
@@ -144,76 +150,64 @@ const Aurora = ({
     propsRef.current = { colorStops, amplitude, blend, speed, time };
   }, [colorStops, amplitude, blend, speed, time]);
 
-  // Слушаем события visibilitychange для восстановления контекста
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // При возвращении на вкладку, принудительно обновляем
-        setKey(prev => prev + 1);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const ctn = ctnDom.current;
-    if (!ctn) return;
-
-    // Проверка лимита WebGL контекстов
-    if (activeWebGLContexts >= MAX_WEBGL_CONTEXTS) {
-      console.warn(`Aurora: Maximum WebGL contexts (${MAX_WEBGL_CONTEXTS}) reached, using fallback`);
-      setIsSupported(false);
-      return;
+  // Функция очистки WebGL контекста
+  const cleanupWebGL = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
-
-    // Проверка поддержки WebGL
-    const checkWebGLSupport = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) {
-          setIsSupported(false);
-          return false;
-        }
-        return true;
-      } catch (e) {
-        setIsSupported(false);
-        return false;
-      }
-    };
-
-    if (!checkWebGLSupport()) {
-      return;
-    }
-
-    let renderer, gl, program, mesh, animateId;
-    let isMounted = true;
 
     try {
-      // Увеличиваем счётчик активных контекстов
-      activeWebGLContexts++;
-      contextCreatedRef.current = true;
+      if (rendererRef.current && glRef.current && glRef.current.canvas && glRef.current.canvas.parentNode === ctnDom.current) {
+        ctnDom.current?.removeChild(glRef.current.canvas);
+      }
+      
+      if (glRef.current) {
+        const loseContext = glRef.current.getExtension('WEBGL_lose_context');
+        if (loseContext) {
+          loseContext.loseContext();
+        }
+      }
+    } catch (e) {
+      // Игнорируем ошибки очистки
+    }
 
-      renderer = new Renderer({
+    rendererRef.current = null;
+    programRef.current = null;
+    meshRef.current = null;
+    glRef.current = null;
+    canvasRef.current = null;
+  }, []);
+
+  // Функция инициализации WebGL
+  const initWebGL = useCallback(() => {
+    if (!mountedRef.current || !ctnDom.current) return false;
+    
+    // Проверка лимита WebGL контекстов
+    if (activeWebGLContexts >= MAX_WEBGL_CONTEXTS) {
+      setIsSupported(false);
+      return false;
+    }
+
+    try {
+      const renderer = new Renderer({
         alpha: true,
         premultipliedAlpha: true,
         antialias: true,
         powerPreference: "high-performance"
       });
 
-      gl = renderer.gl;
+      const gl = renderer.gl;
       if (!gl) {
         setIsSupported(false);
-        activeWebGLContexts--;
-        contextCreatedRef.current = false;
-        return;
+        return false;
       }
 
-      // Принудительно очищаем буфер
+      activeWebGLContexts++;
+      contextCreatedRef.current = true;
+      rendererRef.current = renderer;
+      glRef.current = gl;
+
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.enable(gl.BLEND);
@@ -226,126 +220,159 @@ const Aurora = ({
       gl.canvas.style.left = '0';
       gl.canvas.style.pointerEvents = 'none';
 
-      function resize() {
-        if (!isMounted || !ctn || !renderer || !program) return;
-        const width = ctn.offsetWidth;
-        const height = ctn.offsetHeight;
-        if (width === 0 || height === 0) return;
-        renderer.setSize(width, height);
-        program.uniforms.uResolution.value = [width, height];
-        // Принудительная перерисовка после ресайза
-        if (gl) {
-          gl.viewport(0, 0, width, height);
-        }
-      }
-
-      window.addEventListener('resize', resize);
-
       const geometry = new Triangle(gl);
       if (geometry.attributes.uv) {
         delete geometry.attributes.uv;
       }
 
-      const colorStopsArray = colorStops.map(hex => {
+      const colorStopsArray = propsRef.current.colorStops.map(hex => {
         const c = new Color(hex);
         return [c.r, c.g, c.b];
       });
 
-      program = new Program(gl, {
+      const program = new Program(gl, {
         vertex: VERT,
         fragment: FRAG,
         uniforms: {
           uTime: { value: 0 },
-          uAmplitude: { value: amplitude },
+          uAmplitude: { value: propsRef.current.amplitude },
           uColorStops: { value: colorStopsArray },
-          uResolution: { value: [ctn.offsetWidth || 300, ctn.offsetHeight || 300] },
-          uBlend: { value: blend }
+          uResolution: { value: [ctnDom.current.offsetWidth || 300, ctnDom.current.offsetHeight || 300] },
+          uBlend: { value: propsRef.current.blend }
         }
       });
 
-      mesh = new Mesh(gl, { geometry, program });
+      const mesh = new Mesh(gl, { geometry, program });
 
-      if (canvasRef.current) {
-        try {
-          if (canvasRef.current.parentNode === ctn) {
-            ctn.removeChild(canvasRef.current);
-          }
-        } catch (e) { }
+      if (canvasRef.current?.parentNode === ctnDom.current) {
+        ctnDom.current?.removeChild(canvasRef.current);
       }
 
-      ctn.appendChild(gl.canvas);
+      ctnDom.current.appendChild(gl.canvas);
       canvasRef.current = gl.canvas;
+      programRef.current = program;
+      meshRef.current = mesh;
 
-      const update = () => {
-        if (!isMounted || !program || !renderer || !mesh) return;
-        animateId = requestAnimationFrame(update);
-
-        const currentProps = propsRef.current;
-
-        const currentTime = Date.now() / 1000;
-        const elapsed = currentTime - initialTime;
-
-        program.uniforms.uTime.value = (currentProps.time + elapsed) * currentProps.speed * 0.2;
-        program.uniforms.uAmplitude.value = currentProps.amplitude;
-        program.uniforms.uBlend.value = currentProps.blend;
-
-        const stops = currentProps.colorStops;
-        program.uniforms.uColorStops.value = stops.map(hex => {
-          const c = new Color(hex);
-          return [c.r, c.g, c.b];
-        });
-
-        try {
-          renderer.render({ scene: mesh });
-        } catch (e) {
-          // Игнорируем ошибки рендеринга
-        }
-      };
-
-      animateId = requestAnimationFrame(update);
-      setTimeout(resize, 100);
-
-      return () => {
-        isMounted = false;
-
-        if (animateId) {
-          cancelAnimationFrame(animateId);
-        }
-
-        window.removeEventListener('resize', resize);
-
-        try {
-          if (ctn && gl?.canvas && gl.canvas.parentNode === ctn) {
-            ctn.removeChild(gl.canvas);
-          }
-          if (gl) {
-            const loseContext = gl.getExtension('WEBGL_lose_context');
-            if (loseContext) {
-              loseContext.loseContext();
-            }
-          }
-        } catch (e) {
-          // Игнорируем ошибки при очистке
-        }
-
-        // Уменьшаем счётчик активных контекстов при размонтировании
-        if (contextCreatedRef.current) {
-          activeWebGLContexts--;
-          contextCreatedRef.current = false;
-        }
-      };
+      return true;
     } catch (error) {
-      console.error('Aurora WebGL initialization error:', error);
+      console.error('Aurora init error:', error);
       setIsSupported(false);
+      return false;
+    }
+  }, []);
 
+  // Функция анимации
+  const animate = useCallback(() => {
+    if (!mountedRef.current) return;
+    if (!programRef.current || !rendererRef.current || !meshRef.current || !glRef.current) {
+      // Если контекст потерян, переинициализируем
+      if (isActive && mountedRef.current) {
+        cleanupWebGL();
+        setTimeout(() => {
+          if (mountedRef.current && isActive) {
+            initWebGL();
+          }
+        }, 100);
+      }
+      return;
+    }
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    const currentProps = propsRef.current;
+    const currentTime = Date.now() / 1000;
+    const elapsed = currentTime - initialTime;
+    
+    try {
+      programRef.current.uniforms.uTime.value = (currentProps.time + elapsed) * currentProps.speed * 0.2;
+      programRef.current.uniforms.uAmplitude.value = currentProps.amplitude;
+      programRef.current.uniforms.uBlend.value = currentProps.blend;
+
+      const stops = currentProps.colorStops;
+      programRef.current.uniforms.uColorStops.value = stops.map(hex => {
+        const c = new Color(hex);
+        return [c.r, c.g, c.b];
+      });
+
+      rendererRef.current.render({ scene: meshRef.current });
+    } catch (e) {
+      // Ошибка рендеринга — пробуем восстановить
+      if (mountedRef.current) {
+        cleanupWebGL();
+        setTimeout(() => {
+          if (mountedRef.current && isActive) {
+            initWebGL();
+          }
+        }, 100);
+      }
+    }
+  }, [initialTime, isActive, cleanupWebGL, initWebGL]);
+
+  // Функция ресайза
+  const handleResize = useCallback(() => {
+    if (!mountedRef.current || !ctnDom.current || !rendererRef.current || !programRef.current) return;
+    const width = ctnDom.current.offsetWidth;
+    const height = ctnDom.current.offsetHeight;
+    if (width === 0 || height === 0) return;
+    rendererRef.current.setSize(width, height);
+    programRef.current.uniforms.uResolution.value = [width, height];
+    if (glRef.current) {
+      glRef.current.viewport(0, 0, width, height);
+    }
+  }, []);
+
+  // Слушатель потери контекста
+  useEffect(() => {
+    const handleContextLost = (e) => {
+      e.preventDefault();
+      setIsActive(false);
+      cleanupWebGL();
+    };
+
+    const handleContextRestored = () => {
+      setIsActive(true);
+    };
+
+    if (glRef.current) {
+      glRef.current.canvas.addEventListener('webglcontextlost', handleContextLost);
+      glRef.current.canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    }
+
+    return () => {
+      if (glRef.current?.canvas) {
+        glRef.current.canvas.removeEventListener('webglcontextlost', handleContextLost);
+        glRef.current.canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      }
+    };
+  }, [cleanupWebGL]);
+
+  // Основной эффект
+  useEffect(() => {
+    mountedRef.current = true;
+    setIsActive(true);
+
+    const success = initWebGL();
+    if (success) {
+      animate();
+      handleResize();
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      mountedRef.current = false;
+      setIsActive(false);
+      window.removeEventListener('resize', handleResize);
+      cleanupWebGL();
+      
       if (contextCreatedRef.current) {
         activeWebGLContexts--;
         contextCreatedRef.current = false;
       }
-      return;
-    }
-  }, [initialTime, key]); // Добавляем key в зависимости
+    };
+  }, [initWebGL, animate, handleResize, cleanupWebGL]);
 
+  // Fallback при отсутствии поддержки WebGL
   if (!isSupported) {
     const gradientColors = colorStops.join(', ');
     return (
