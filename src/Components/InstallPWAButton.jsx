@@ -182,7 +182,7 @@ const InstallPWAButton = () => {
             {/* Текст-примечание */}
             <div className="pb-4 text-center">
               <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                Приложение появится на рабочем столе
+                Приложение появится на рабочем столе!
               </p>
             </div>
           </div>
