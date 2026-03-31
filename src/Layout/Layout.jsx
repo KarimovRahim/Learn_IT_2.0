@@ -1,174 +1,213 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation, Outlet } from 'react-router-dom'
-import { HashLink } from 'react-router-hash-link';
-import { Phone } from 'lucide-react'
-import Button from '../Components/UI/Button.jsx'
-import { motion } from 'framer-motion'
-import Switch from '../Components/swintcher.jsx'
-import Footer from '../Components/Footer/Footer.jsx'
-import BurgerMenu from '../Components/BurgerMenu.jsx'
-import InstallPWAButton from '../Components/InstallPWAButton.jsx'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
-import log from '../assets/logotype.png';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Share2, X, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const Layout = () => {
-  const [isScrolled, setIsScrolled] = useState(true)
-  const [isDark, setIsDark] = useState(false)
-  const location = useLocation()
+const InstallPWAButton = () => {
+  const [showButton, setShowButton] = useState(true);
+  const [isVisible, setIsVisible] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      easing: 'ease-out-cubic',
-      once: false,
-      mirror: true,
-      offset: 100,
-      delay: 100,
-    });
-
-    return () => {
-      AOS.refresh();
-    };
-  }, []);
-
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'smooth'
-    });
-  }, [location.pathname]);
-
-  useEffect(() => {
-    AOS.refresh();
-  }, [location.pathname]);
-
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     setIsScrolled(window.scrollY > 10)
-  //   }
-  //   window.addEventListener('scroll', handleScroll)
-  //   return () => window.removeEventListener('scroll', handleScroll)
-  // }, [])
-
-  useEffect(() => {
-    const userTheme = localStorage.getItem('theme');
-
-    const isDarkTheme = userTheme === 'dark';
-
-    if (isDarkTheme) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    setMounted(true);
+    const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    setIsInstalled(isAppInstalled);
+    
+    if (isAppInstalled) {
+      setShowButton(false);
     }
-
-    setIsDark(isDarkTheme);
+    
+    return () => setMounted(false);
   }, []);
 
-  const handleToggle = () => {
-    const newTheme = !isDark;
-    setIsDark(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-    setTimeout(() => AOS.refresh(), 100);
+  const handleClick = () => {
+    setShowInstructions(true);
+    document.body.style.overflow = 'hidden';
   };
 
-  const navLinks = [
-    { name: 'Главная', path: '/' },
-    { name: 'Курсы', path: '/courses' },
-    { name: 'Наши услуги', path: '/services' },
-    { name: 'Новости', path: '/news' },
-  ]
+  const closeInstructions = () => {
+    setShowInstructions(false);
+    document.body.style.overflow = '';
+  };
 
-  const isActive = (path) => location.pathname === path
+  const hideButton = () => {
+    setIsVisible(false);
+  };
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 font-sans selection-red transition-colors duration-300">
-      <header
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled
-            ? 'backdrop-blur-md border-gray-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/80 py-3'
-            : 'bg-transparent py-5'
-          }`}
-        data-aos="fade-down"
-        data-aos-duration="600"
-        data-aos-easing="ease-out-quad"
-        data-aos-offset="0"
-        data-aos-once="true"
+  if (!mounted) return null;
+  if (isInstalled || !showButton || !isVisible) return null;
+
+  // Кнопка в header
+  const button = (
+    <button
+      onClick={handleClick}
+      className="relative group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+    >
+      <motion.div
+        animate={{ y: [0, -2, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-2"
-            data-aos="fade-right"
-            data-aos-duration="800"
-            data-aos-delay="200"
-            data-aos-easing="ease-out-cubic"
-          >
-            {/* Логотип с изображением */}
-            <div className="">
-              <img
-                src={log}
-                alt="Learn IT Logo"
-                className="w-[100px]"
-              />
-            </div>
-          </Link>
+        <Share2 className="w-3.5 h-3.5" />
+      </motion.div>
+      <span className="hidden sm:inline">Установить</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          hideButton();
+        }}
+        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+      >
+        <X className="w-2.5 h-2.5" />
+      </button>
+      <motion.div
+        className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full"
+        animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 1, repeat: Infinity }}
+      />
+    </button>
+  );
 
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link, index) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className={`text-sm font-medium transition-colors ${isActive(link.path)
-                    ? 'text-red-600 dark:text-white border-b-2 border-red-500 pb-1'
-                    : 'text-gray-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-white'
-                  }`}
-                data-aos="fade-down"
-                data-aos-duration="500"
-                data-aos-delay={300 + index * 100}
-                data-aos-easing="ease-out-back"
-              >
-                {link.name}
-              </Link>
-            ))}
-          </nav>
+  // Модальное окно через Portal
+  const modal = showInstructions && createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
+      onClick={closeInstructions}
+    >
+      <div 
+        className="relative w-full max-w-[340px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          animation: 'modalFadeIn 0.3s ease-out'
+        }}
+      >
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full" />
+        </div>
 
-          <div className="flex items-center gap-4" data-aos="fade-left" data-aos-duration="700" data-aos-delay="600">
-            <InstallPWAButton />
-            <Switch darkChecked={isDark} darkOnchange={handleToggle} />
-            <div className="hidden md:flex items-center gap-6">
-              <a
-                href="tel:+992920091313"
-                className="flex items-center gap-2 text-gray-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-white transition-colors group"
-                data-aos="fade-left"
-                data-aos-duration="600"
-                data-aos-delay="700"
-                data-aos-easing="ease-out-quad"
-              >
-                <Phone className="w-4 h-4 text-red-500 group-hover:text-red-400" />
-                <span className="text-sm font-medium">+992 (92) 009-13-13</span>
-              </a>
-              <HashLink
-                smooth
-                to="/#contacts"
-              >
-              </HashLink>
-            </div>
-
-            {/* BurgerMenu теперь рендерит только кнопку, меню уходит в портал */}
-            <BurgerMenu />
+        {/* Иконка приложения */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg flex items-center justify-center">
+            <Share2 className="w-7 h-7 text-white" />
           </div>
         </div>
-      </header>
 
-      <main className="-mt-2" data-aos="fade" data-aos-duration="1000" data-aos-delay="200">
-        <Outlet />
-      </main>
+        {/* Заголовок */}
+        <div className="text-center px-5 pt-2 pb-1">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Установить приложение
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Добавьте Learn IT на главный экран
+          </p>
+        </div>
 
-      <Footer />
-    </div>
-  )
-}
+        {/* Инструкция */}
+        <div className="px-5 py-3 space-y-3">
+          {/* Шаг 1 */}
+          <div className="flex items-start gap-2.5">
+            <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+              1
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200">
+                Нажмите кнопку «Поделиться»
+              </p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-[11px] text-gray-600 dark:text-gray-300">Поделиться</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              </div>
+            </div>
+          </div>
 
-export default Layout
+          {/* Шаг 2 */}
+          <div className="flex items-start gap-2.5">
+            <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+              2
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200">
+                Прокрутите вниз и нажмите
+              </p>
+              <div className="mt-1.5">
+                <div className="inline-block bg-gray-100 dark:bg-zinc-800 rounded-lg px-3 py-1">
+                  <span className="text-[12px] font-medium text-blue-600 dark:text-blue-400">
+                    «На экран домой»
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Анимация скролла */}
+          <div className="flex justify-center py-0.5">
+            <div className="flex flex-col items-center">
+              <motion.div
+                animate={{ y: [0, 3, 0] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                className="w-5 h-5 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center"
+              >
+                <ChevronDown className="w-3 h-3 text-gray-500" />
+              </motion.div>
+              <span className="text-[9px] text-gray-400 mt-0.5">прокрутите вниз</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Кнопка действия */}
+        <div className="px-5 pb-4 pt-1">
+          <button
+            onClick={closeInstructions}
+            className="w-full py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium text-sm active:scale-95 transition-all duration-200 shadow-md"
+          >
+            Понятно
+          </button>
+        </div>
+
+        {/* Текст-примечание */}
+        <div className="pb-4 text-center">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+            Приложение появится на рабочем столе
+          </p>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+
+  return (
+    <>
+      {button}
+      {modal}
+      <style>{`
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
+export default InstallPWAButton;
