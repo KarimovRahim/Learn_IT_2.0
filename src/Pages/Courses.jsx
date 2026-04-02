@@ -14,8 +14,6 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SearchIcon from "@mui/icons-material/Search";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import NewReleasesIcon from "@mui/icons-material/NewReleases";
 
 const Courses = () => {
   const [data, setData] = useState([]);
@@ -38,7 +36,7 @@ const Courses = () => {
       const json = await res.json();
       const records = json.items;
 
-      const formattedData = records.map((rec, index) => ({
+      const formattedData = records.map((rec) => ({
         id: rec.id,
         imageCourse: `${import.meta.env.VITE_POCKETBASE_URL || 'https://ehjoi-manaviyat.pockethost.io'}/api/files/${rec.collectionId}/${rec.id}/${rec.image}`,
         months: rec.months,
@@ -47,8 +45,6 @@ const Courses = () => {
         description: rec.description,
         price: rec.price,
         rate: rec.rate,
-        isPopular: rec.rate >= 4.8,
-        isNew: index < 3,
       }));
 
       setData(formattedData);
@@ -62,7 +58,6 @@ const Courses = () => {
     getCourses();
   }, []);
 
-  // Фильтрация и сортировка
   useEffect(() => {
     let filtered = [...data];
 
@@ -122,25 +117,8 @@ const Courses = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white border border-black/10 rounded-3xl overflow-hidden hover:border-red-600/50 transition-all duration-300 hover:-translate-y-2 group dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-red-500/30 shadow-sm hover:shadow-xl relative"
+                  className="bg-white border border-black/10 rounded-3xl overflow-hidden hover:border-red-600/50 transition-all duration-300 hover:-translate-y-2 group dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-red-500/30 shadow-sm hover:shadow-xl"
                 >
-                  {/* Бейджи */}
-                  <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    {element.isPopular && (
-                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg shadow-md flex items-center gap-1">
-                        <TrendingUpIcon sx={{ fontSize: 12 }} />
-                        Популярный
-                      </span>
-                    )}
-                    {element.isNew && (
-                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg shadow-md flex items-center gap-1">
-                        <NewReleasesIcon sx={{ fontSize: 12 }} />
-                        Новый
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Изображение */}
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={element.imageCourse}
@@ -149,7 +127,6 @@ const Courses = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
-                    {/* Рейтинг */}
                     <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
                       <StarIcon sx={{ fontSize: 16 }} className="text-yellow-500" />
                       <span className="text-sm font-bold text-gray-900">
@@ -157,7 +134,6 @@ const Courses = () => {
                       </span>
                     </div>
 
-                    {/* Категория */}
                     <div className="absolute bottom-3 left-3">
                       <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-500 text-white shadow-lg">
                         Курс
@@ -165,7 +141,6 @@ const Courses = () => {
                     </div>
                   </div>
 
-                  {/* Контент */}
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-black mb-3 group-hover:text-red-600 transition-colors dark:text-white dark:group-hover:text-red-500">
                       {element.nameCourse}
@@ -175,7 +150,6 @@ const Courses = () => {
                       {parse(element.description)}
                     </div>
 
-                    {/* Характеристики */}
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <CalendarMonthIcon sx={{ fontSize: 18 }} className="text-red-500" />
@@ -189,7 +163,6 @@ const Courses = () => {
                       </div>
                     </div>
 
-                    {/* Теги */}
                     {element.tags && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {element.tags.split(',').slice(0, 3).map((tag, idx) => (
@@ -209,7 +182,6 @@ const Courses = () => {
                       </div>
                     )}
 
-                    {/* Кнопки */}
                     <div className="flex items-center gap-3 mt-4">
                       <ReadMoreButton
                         to={`/detail/course/${element.id}`}
