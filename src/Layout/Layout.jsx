@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { HashLink } from 'react-router-hash-link';
 import { Phone } from 'lucide-react'
-import Button from '../Components/UI/Button.jsx'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Switch from '../Components/swintcher.jsx'
 import Footer from '../Components/Footer/Footer.jsx'
 import BurgerMenu from '../Components/BurgerMenu.jsx'
@@ -18,7 +17,6 @@ import log from '../assets/logotype.png';
 const Layout = () => {
   const [isScrolled, setIsScrolled] = useState(true)
   const [isDark, setIsDark] = useState(false)
-  const [swipeDirection, setSwipeDirection] = useState(null)
   const [showSwipeHint, setShowSwipeHint] = useState(false)
   const location = useLocation()
   
