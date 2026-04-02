@@ -1,11 +1,32 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HashLink } from 'react-router-hash-link';
 import { IconBrandTelegram, IconBrandFacebook, IconBrandInstagram } from '@tabler/icons-react';
+import { toast } from 'react-hot-toast';
 import log from '../../assets/logotype.png';
 
-
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast.error('Введите корректный email');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Здесь можно добавить API запрос для сохранения email
+    // Пока просто показываем уведомление
+    setTimeout(() => {
+      toast.success('Спасибо за подписку!');
+      setEmail('');
+      setIsSubmitting(false);
+    }, 500);
+  };
+
   return (
     <footer
       className="bg-white border-t border-black/10 pt-16 pb-8 dark:bg-zinc-950 dark:border-zinc-900"
@@ -103,13 +124,35 @@ const Footer = () => {
           </div>
         </div>
 
+        {/* Форма подписки */}
+        <div className="border-t border-black/10 dark:border-zinc-800 pt-8 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <h4 className="text-black font-bold dark:text-white">Подпишитесь на новости</h4>
+              <p className="text-sm text-black/50 dark:text-zinc-500">Получайте актуальные новости и акции первыми</p>
+            </div>
+            <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Ваш email"
+                className="flex-1 md:w-64 px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-transparent focus:border-red-500 outline-none transition-colors"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? '...' : 'Подписаться'}
+              </button>
+            </form>
+          </div>
+        </div>
+
         {/* Нижняя часть */}
-        <div
-          className="border-t border-black/10 pt-8 flex flex-col items-center justify-center md:flex-row justify-center items-center gap-4 text-xs text-black/40 dark:border-zinc-800 dark:text-zinc-600"
-        // data-aos="fade-up"
-        // data-aos-duration="500"
-        // data-aos-delay="300"
-        >
+        <div className="border-t border-black/10 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-xs text-black/40 dark:border-zinc-800 dark:text-zinc-600">
           <p>© 2026 Learn IT Academy. Все права защищены.</p>
         </div>
       </div>
@@ -117,4 +160,4 @@ const Footer = () => {
   )
 }
 
-export default Footer
+export default Footer;

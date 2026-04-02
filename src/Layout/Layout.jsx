@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { HashLink } from 'react-router-hash-link';
-import { Phone } from 'lucide-react'
+import { Phone, Home, BookOpen, Settings, Newspaper } from 'lucide-react'
 import Button from '../Components/UI/Button.jsx'
 import { motion } from 'framer-motion'
 import Switch from '../Components/swintcher.jsx'
 import Footer from '../Components/Footer/Footer.jsx'
 import BurgerMenu from '../Components/BurgerMenu.jsx'
 import InstallPWAButton from '../Components/InstallPWAButton.jsx'
+import FloatingButtons from '../Components/FloatingButtons.jsx'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import log from '../assets/logotype.png';
@@ -44,13 +45,13 @@ const Layout = () => {
     AOS.refresh();
   }, [location.pathname]);
 
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     setIsScrolled(window.scrollY > 10)
-  //   }
-  //   window.addEventListener('scroll', handleScroll)
-  //   return () => window.removeEventListener('scroll', handleScroll)
-  // }, [])
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     const userTheme = localStorage.getItem('theme');
@@ -75,10 +76,10 @@ const Layout = () => {
   };
 
   const navLinks = [
-    { name: 'Главная', path: '/' },
-    { name: 'Курсы', path: '/courses' },
-    { name: 'Наши услуги', path: '/services' },
-    { name: 'Новости', path: '/news' },
+    { name: 'Главная', path: '/', icon: Home },
+    { name: 'Курсы', path: '/courses', icon: BookOpen },
+    { name: 'Наши услуги', path: '/services', icon: Settings },
+    { name: 'Новости', path: '/news', icon: Newspaper },
   ]
 
   const isActive = (path) => location.pathname === path
@@ -105,7 +106,6 @@ const Layout = () => {
             data-aos-delay="200"
             data-aos-easing="ease-out-cubic"
           >
-            {/* Логотип с изображением */}
             <div className="">
               <img
                 src={log}
@@ -120,16 +120,22 @@ const Layout = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-medium transition-colors ${isActive(link.path)
-                    ? 'text-red-600 dark:text-white border-b-2 border-red-500 pb-1'
-                    : 'text-gray-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-white'
-                  }`}
+                className="relative group text-sm font-medium transition-colors"
                 data-aos="fade-down"
                 data-aos-duration="500"
                 data-aos-delay={300 + index * 100}
                 data-aos-easing="ease-out-back"
               >
-                {link.name}
+                <span className={isActive(link.path)
+                  ? 'text-red-600 dark:text-red-500'
+                  : 'text-gray-600 dark:text-zinc-400 group-hover:text-red-600 dark:group-hover:text-red-500'
+                }>
+                  {link.name}
+                </span>
+                {/* Анимированное подчёркивание */}
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-red-500 to-red-600 transition-all duration-300 ${
+                  isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'
+                }`} />
               </Link>
             ))}
           </nav>
@@ -149,14 +155,7 @@ const Layout = () => {
                 <Phone className="w-4 h-4 text-red-500 group-hover:text-red-400" />
                 <span className="text-sm font-medium">+992 (92) 009-13-13</span>
               </a>
-              <HashLink
-                smooth
-                to="/#contacts"
-              >
-              </HashLink>
             </div>
-
-            {/* BurgerMenu теперь рендерит только кнопку, меню уходит в портал */}
             <BurgerMenu />
           </div>
         </div>
@@ -165,6 +164,9 @@ const Layout = () => {
       <main className="-mt-2" data-aos="fade" data-aos-duration="1000" data-aos-delay="200">
         <Outlet />
       </main>
+
+      {/* Плавающие кнопки */}
+      <FloatingButtons />
 
       <Footer />
     </div>

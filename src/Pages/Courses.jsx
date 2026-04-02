@@ -14,7 +14,8 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import NewReleasesIcon from "@mui/icons-material/NewReleases";
 
 const Courses = () => {
   const [data, setData] = useState([]);
@@ -37,7 +38,7 @@ const Courses = () => {
       const json = await res.json();
       const records = json.items;
 
-      const formattedData = records.map((rec) => ({
+      const formattedData = records.map((rec, index) => ({
         id: rec.id,
         imageCourse: `${import.meta.env.VITE_POCKETBASE_URL || 'https://ehjoi-manaviyat.pockethost.io'}/api/files/${rec.collectionId}/${rec.id}/${rec.image}`,
         months: rec.months,
@@ -46,6 +47,8 @@ const Courses = () => {
         description: rec.description,
         price: rec.price,
         rate: rec.rate,
+        isPopular: rec.rate >= 4.8,
+        isNew: index < 3,
       }));
 
       setData(formattedData);
@@ -63,7 +66,6 @@ const Courses = () => {
   useEffect(() => {
     let filtered = [...data];
 
-    // Поиск
     if (searchQuery) {
       filtered = filtered.filter(course =>
         course.nameCourse.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,12 +73,10 @@ const Courses = () => {
       );
     }
 
-    // Фильтр по уровню
     if (selectedLevel !== "Все") {
       filtered = filtered.filter(course => course.tags && course.tags.includes(selectedLevel));
     }
 
-    // Сортировка
     if (sortBy === "price_asc") {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "price_desc") {
@@ -95,7 +95,6 @@ const Courses = () => {
         data-aos="fade"
         data-aos-duration="1000"
       >
-        {/* Заголовок */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -112,11 +111,8 @@ const Courses = () => {
           >
             Выберите направление, которое подходит именно вам. Старт новых групп каждые 2 недели.
           </motion.p>
-
-
         </div>
 
-        {/* Сетка курсов */}
         <div className="bg-gray-50/50 dark:bg-transparent transition-colors duration-300 rounded-3xl p-2 md:p-8">
           <div className="max-w-[1440px] mx-auto pb-10">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -126,8 +122,24 @@ const Courses = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white border border-black/10 rounded-3xl overflow-hidden hover:border-red-600/50 transition-all duration-300 hover:-translate-y-2 group dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-red-500/30 shadow-sm hover:shadow-xl"
+                  className="bg-white border border-black/10 rounded-3xl overflow-hidden hover:border-red-600/50 transition-all duration-300 hover:-translate-y-2 group dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-red-500/30 shadow-sm hover:shadow-xl relative"
                 >
+                  {/* Бейджи */}
+                  <div className="absolute top-3 left-3 z-10 flex gap-2">
+                    {element.isPopular && (
+                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg shadow-md flex items-center gap-1">
+                        <TrendingUpIcon sx={{ fontSize: 12 }} />
+                        Популярный
+                      </span>
+                    )}
+                    {element.isNew && (
+                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg shadow-md flex items-center gap-1">
+                        <NewReleasesIcon sx={{ fontSize: 12 }} />
+                        Новый
+                      </span>
+                    )}
+                  </div>
+
                   {/* Изображение */}
                   <div className="relative h-48 overflow-hidden">
                     <img
@@ -221,7 +233,6 @@ const Courses = () => {
               ))}
             </div>
 
-            {/* Если нет результатов */}
             {filteredData.length === 0 && (
               <div className="text-center py-20">
                 <div className="inline-block p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl">
@@ -238,7 +249,6 @@ const Courses = () => {
           </div>
         </div>
 
-        {/* Блок консультации */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

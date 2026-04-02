@@ -6,10 +6,11 @@ import { Pagination, Navigation, Autoplay } from 'swiper/modules';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import ReadMoreButton from './ReadMoreButton';
 import Section from './UI/Section';
 
-// Импорт стилей Swiper
 import 'swiper/swiper-bundle.css';
 
 const CoursesCarousel = ({ 
@@ -20,7 +21,6 @@ const CoursesCarousel = ({
   className = ""
 }) => {
   
-  // Если курсов нет, показываем заглушку
   if (!courses || courses.length === 0) {
     return (
       <Section id={id} className={`bg-white dark:bg-transparent ${className}`}>
@@ -30,6 +30,13 @@ const CoursesCarousel = ({
       </Section>
     );
   }
+
+  // Добавляем метки популярности и новизны
+  const coursesWithBadges = courses.map((course, index) => ({
+    ...course,
+    isPopular: course.price >= 3000 || index < 2,
+    isNew: index < 2,
+  }));
 
   return (
     <Section
@@ -42,14 +49,12 @@ const CoursesCarousel = ({
       <div className="w-full py-20 bg-[#fdfdfd] dark:bg-zinc-950 overflow-hidden">
         <div className="max-w-[1400px] mx-auto px-6">
 
-          {/* Шапка с кнопками навигации */}
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div className="text-left">
               <h1 className="text-4xl font-bold mb-4 dark:text-white tracking-tight">{title}</h1>
               <p className="text-gray-500 max-w-xl dark:text-zinc-400">{subtitle}</p>
             </div>
 
-            {/* Кастомные кнопки навигации */}
             <div className="flex gap-3">
               <button className="courses-swiper-prev-btn w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300 dark:border-zinc-800 dark:text-white">
                 <ArrowBackIosNewIcon sx={{ fontSize: 18 }} />
@@ -81,13 +86,28 @@ const CoursesCarousel = ({
             }}
             className="!pb-14"
           >
-            {courses.slice(0, 6).map((course) => (
+            {coursesWithBadges.slice(0, 6).map((course) => (
               <SwiperSlide key={course.id} className="h-auto">
                 <motion.div
                   whileHover={{ y: -5 }}
                   className="group bg-white h-full border border-gray-100 hover:border-transparent rounded-2xl p-8 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] dark:bg-zinc-900 dark:border-zinc-800 flex flex-col relative overflow-hidden"
                 >
-                  {/* Декоративный элемент фона при наведении */}
+                  {/* Бейджи */}
+                  <div className="absolute top-3 left-3 z-10 flex gap-2">
+                    {course.isPopular && (
+                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg shadow-md flex items-center gap-1">
+                        <TrendingUpIcon sx={{ fontSize: 12 }} />
+                        Популярный
+                      </span>
+                    )}
+                    {course.isNew && (
+                      <span className="px-2 py-1 text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg shadow-md flex items-center gap-1">
+                        <NewReleasesIcon sx={{ fontSize: 12 }} />
+                        Новый
+                      </span>
+                    )}
+                  </div>
+
                   <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-50 rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 -z-0 dark:bg-red-900/10" />
 
                   <div className="relative z-10 flex flex-col h-full">
@@ -103,7 +123,6 @@ const CoursesCarousel = ({
                       {typeof course.description === 'string' ? parse(course.description) : course.description}
                     </div>
 
-                    {/* Преимущества в виде красивых чипсов */}
                     <ul className="space-y-3 mb-8">
                       {course.benefits?.slice(0, 3).map((benefit, idx) => (
                         <motion.li
