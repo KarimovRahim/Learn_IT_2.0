@@ -14,7 +14,7 @@ import log from '../assets/logotype.png';
 
 const Layout = () => {
   const [isScrolled, setIsScrolled] = useState(true)
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(true) // ← изменено с false на true
   const location = useLocation()
 
   useEffect(() => {
@@ -52,18 +52,24 @@ const Layout = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Загрузка темы — теперь по умолчанию тёмная
   useEffect(() => {
     const userTheme = localStorage.getItem('theme');
-
-    const isDarkTheme = userTheme === 'dark';
-
-    if (isDarkTheme) {
+    
+    // Если тема не сохранена, ставим тёмную по умолчанию
+    if (!userTheme) {
       document.documentElement.classList.add('dark');
+      setIsDark(true);
+      localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      const isDarkTheme = userTheme === 'dark';
+      if (isDarkTheme) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      setIsDark(isDarkTheme);
     }
-
-    setIsDark(isDarkTheme);
   }, []);
 
   const handleToggle = () => {
