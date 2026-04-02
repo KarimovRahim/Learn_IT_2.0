@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { HashLink } from 'react-router-hash-link';
-import { Phone, Home, BookOpen, Settings, Newspaper } from 'lucide-react'
+import { Phone } from 'lucide-react'
 import Button from '../Components/UI/Button.jsx'
 import { motion } from 'framer-motion'
 import Switch from '../Components/swintcher.jsx'
@@ -9,6 +9,8 @@ import Footer from '../Components/Footer/Footer.jsx'
 import BurgerMenu from '../Components/BurgerMenu.jsx'
 import InstallPWAButton from '../Components/InstallPWAButton.jsx'
 import FloatingButtons from '../Components/FloatingButtons.jsx'
+import SwipeIndicator from '../Components/SwipeIndicator.jsx'
+import useSwipeNavigation from '../hooks/useSwipeNavigation.js'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import log from '../assets/logotype.png';
@@ -16,7 +18,24 @@ import log from '../assets/logotype.png';
 const Layout = () => {
   const [isScrolled, setIsScrolled] = useState(true)
   const [isDark, setIsDark] = useState(false)
+  const [swipeDirection, setSwipeDirection] = useState(null)
+  const [showSwipeHint, setShowSwipeHint] = useState(false)
   const location = useLocation()
+  
+  // Подключаем свайп навигацию
+  const { goToNext, goToPrev, currentIndex, pages } = useSwipeNavigation();
+
+  // Показываем подсказку о свайпах при первом посещении
+  useEffect(() => {
+    const hasSeenSwipeHint = localStorage.getItem('hasSeenSwipeHint');
+    if (!hasSeenSwipeHint) {
+      setShowSwipeHint(true);
+      setTimeout(() => {
+        setShowSwipeHint(false);
+        localStorage.setItem('hasSeenSwipeHint', 'true');
+      }, 3000);
+    }
+  }, []);
 
   useEffect(() => {
     AOS.init({
@@ -55,7 +74,6 @@ const Layout = () => {
 
   useEffect(() => {
     const userTheme = localStorage.getItem('theme');
-
     const isDarkTheme = userTheme === 'dark';
 
     if (isDarkTheme) {
@@ -76,10 +94,10 @@ const Layout = () => {
   };
 
   const navLinks = [
-    { name: 'Главная', path: '/', icon: Home },
-    { name: 'Курсы', path: '/courses', icon: BookOpen },
-    { name: 'Наши услуги', path: '/services', icon: Settings },
-    { name: 'Новости', path: '/news', icon: Newspaper },
+    { name: 'Главная', path: '/' },
+    { name: 'Курсы', path: '/courses' },
+    { name: 'Наши услуги', path: '/services' },
+    { name: 'Новости', path: '/news' },
   ]
 
   const isActive = (path) => location.pathname === path
@@ -132,7 +150,6 @@ const Layout = () => {
                 }>
                   {link.name}
                 </span>
-                {/* Анимированное подчёркивание */}
                 <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-red-500 to-red-600 transition-all duration-300 ${
                   isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'
                 }`} />
@@ -165,9 +182,30 @@ const Layout = () => {
         <Outlet />
       </main>
 
-      {/* Плавающие кнопки */}
-      <FloatingButtons />
+      {/* Подсказка о свайпах (только при первом посещении) */}
+      <AnimatePresence>
+        {showSwipeHint && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm flex items-center gap-2"
+          >
+            <span>👆</span>
+            <span>Свайпните влево или вправо для навигации</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* Индикаторы свайпа */}
+      {currentIndex > 0 && (
+        <SwipeIndicator direction="left" visible={true} />
+      )}
+      {currentIndex < pages.length - 1 && (
+        <SwipeIndicator direction="right" visible={true} />
+      )}
+
+      <FloatingButtons />
       <Footer />
     </div>
   )
