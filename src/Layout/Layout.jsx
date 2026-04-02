@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { HashLink } from 'react-router-hash-link';
 import { Phone } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Switch from '../Components/swintcher.jsx'
 import Footer from '../Components/Footer/Footer.jsx'
 import BurgerMenu from '../Components/BurgerMenu.jsx'
 import InstallPWAButton from '../Components/InstallPWAButton.jsx'
 import FloatingButtons from '../Components/FloatingButtons.jsx'
-import SwipeIndicator from '../Components/SwipeIndicator.jsx'
-import useSwipeNavigation from '../hooks/useSwipeNavigation.js'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import log from '../assets/logotype.png';
@@ -17,23 +15,7 @@ import log from '../assets/logotype.png';
 const Layout = () => {
   const [isScrolled, setIsScrolled] = useState(true)
   const [isDark, setIsDark] = useState(false)
-  const [showSwipeHint, setShowSwipeHint] = useState(false)
   const location = useLocation()
-  
-  // Подключаем свайп навигацию
-  const { goToNext, goToPrev, currentIndex, pages } = useSwipeNavigation();
-
-  // Показываем подсказку о свайпах при первом посещении
-  useEffect(() => {
-    const hasSeenSwipeHint = localStorage.getItem('hasSeenSwipeHint');
-    if (!hasSeenSwipeHint) {
-      setShowSwipeHint(true);
-      setTimeout(() => {
-        setShowSwipeHint(false);
-        localStorage.setItem('hasSeenSwipeHint', 'true');
-      }, 3000);
-    }
-  }, []);
 
   useEffect(() => {
     AOS.init({
@@ -72,6 +54,7 @@ const Layout = () => {
 
   useEffect(() => {
     const userTheme = localStorage.getItem('theme');
+
     const isDarkTheme = userTheme === 'dark';
 
     if (isDarkTheme) {
@@ -136,21 +119,16 @@ const Layout = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className="relative group text-sm font-medium transition-colors"
+                className={`text-sm font-medium transition-colors ${isActive(link.path)
+                    ? 'text-red-600 dark:text-white border-b-2 border-red-500 pb-1'
+                    : 'text-gray-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-white'
+                  }`}
                 data-aos="fade-down"
                 data-aos-duration="500"
                 data-aos-delay={300 + index * 100}
                 data-aos-easing="ease-out-back"
               >
-                <span className={isActive(link.path)
-                  ? 'text-red-600 dark:text-red-500'
-                  : 'text-gray-600 dark:text-zinc-400 group-hover:text-red-600 dark:group-hover:text-red-500'
-                }>
-                  {link.name}
-                </span>
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-red-500 to-red-600 transition-all duration-300 ${
-                  isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'
-                }`} />
+                {link.name}
               </Link>
             ))}
           </nav>
@@ -179,29 +157,6 @@ const Layout = () => {
       <main className="-mt-2" data-aos="fade" data-aos-duration="1000" data-aos-delay="200">
         <Outlet />
       </main>
-
-      {/* Подсказка о свайпах (только при первом посещении) */}
-      <AnimatePresence>
-        {showSwipeHint && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm flex items-center gap-2"
-          >
-            <span>👆</span>
-            <span>Свайпните влево или вправо для навигации</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Индикаторы свайпа */}
-      {currentIndex > 0 && (
-        <SwipeIndicator direction="left" visible={true} />
-      )}
-      {currentIndex < pages.length - 1 && (
-        <SwipeIndicator direction="right" visible={true} />
-      )}
 
       <FloatingButtons />
       <Footer />
