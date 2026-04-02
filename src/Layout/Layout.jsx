@@ -14,7 +14,7 @@ import log from '../assets/logotype.png';
 
 const Layout = () => {
   const [isScrolled, setIsScrolled] = useState(true)
-  const [isDark, setIsDark] = useState(true) // ← изменено с false на true
+  const [isDark, setIsDark] = useState(true)
   const location = useLocation()
 
   useEffect(() => {
